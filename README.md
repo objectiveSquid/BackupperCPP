@@ -1,4 +1,4 @@
-# Backupper CPP
+# BackupperCPP
 Simple backup program written in C++.<br>
 I made this because no other solutions existed for my problem (*cliché*), which was that I wanted to back up specific folders with the ability to ignore some things based on regex expressions. And I also wanted dates to be copied as well.
 
