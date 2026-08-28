@@ -4,7 +4,7 @@
 void loadMetadata(const std::string &backupDirectoryMetaPath, std::string &backupListPath, std::string &ignoreListPath, std::string &ignoreDatesListPath, bool &copyDates) {
     std::ifstream metadataFile(backupDirectoryMetaPath + "/attributes.txt");
     if (!metadataFile.is_open())
-        throw std::runtime_error("Could not open metadata file");
+        throw std::runtime_error("Could not open metadata file (2)");
 
     std::string line;
     std::getline(metadataFile, line);

@@ -14,6 +14,7 @@ add_executable(BackupperCPP
     src/restore.cpp
     src/time.cpp
     src/other.cpp
+    src/tarball.cpp
 )
 target_compile_options(BackupperCPP PRIVATE -Wall -O2)
 

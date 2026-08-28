@@ -31,6 +31,7 @@ int main(int argc, char **argv) {
     logGroup.add_argument("--quiet", "-q").flag().help("Only display warnings and errors");
     logGroup.add_argument("--verbose", "-v").flag().help("Display debug logs");
 
+    program.add_argument("--tarball").flag().help("Create a tarball instead of a directory");
     program.add_argument("--dryrun").flag().help("Don't actually copy anything");
     program.add_argument("--dont-copy-dates").flag().help("Dont copy file dates");
     program.add_argument("--quit-on-soft-error").flag().help("Quit the program on soft errors, such as paths being converted");
@@ -49,6 +50,7 @@ int main(int argc, char **argv) {
     std::string backupListPath = program.get<std::string>("--backup-list");
     std::string ignoreListPath = program.get<std::string>("--ignore-list");
     std::string ignoreDatesListPath = program.get<std::string>("--ignore-dates-list");
+    bool tarball = program.is_used("--tarball");
     bool dryrun = program.is_used("--dryrun");
     bool restoring = program.is_used("--restore");
     bool quiet = program.is_used("--quiet") || program.is_used("-q");
@@ -59,7 +61,7 @@ int main(int argc, char **argv) {
     // extra arg checks
     if (restoring) {
         if (program.is_used("--backup-list") || program.is_used("--ignore-list") || program.is_used("--ignore-dates-list")) {
-            spdlog::critical("When using --restore, you cannot use --backup-list, --ignore-list, or --ignore-dates-list");
+            spdlog::critical("When using --restore, you cannot use --backup-list, --ignore-list or --ignore-dates-list");
             return 1;
         }
 
@@ -126,9 +128,9 @@ int main(int argc, char **argv) {
         saveMetadata(backupDirectoryPath + "/meta", backupListPath, ignoreListPath, ignoreDatesListPath, copyDates);
 
     if (restoring) // when restoring paths are already absolute
-        runBackup("", backupList.value(), ignoreList.value(), ignoreDatesList.value(), copyDates, quitOnSoftError, dryrun);
+        runBackup("", backupList.value(), ignoreList.value(), ignoreDatesList.value(), backupDirectoryPath, copyDates, quitOnSoftError, dryrun, restoring, tarball);
     else
-        runBackup(backupDirectoryPath + "/files", backupList.value(), ignoreList.value(), ignoreDatesList.value(), copyDates, quitOnSoftError, dryrun);
+        runBackup(backupDirectoryPath + "/files", backupList.value(), ignoreList.value(), ignoreDatesList.value(), backupDirectoryPath, copyDates, quitOnSoftError, dryrun, restoring, tarball);
 
     // restore system time
     if (copyDates) {

@@ -1,5 +1,6 @@
 #include "other.hpp"
 #include "parsing.hpp"
+#include "tarball.hpp"
 #include "time.hpp"
 #include <filesystem>
 #include <fstream>
@@ -13,7 +14,7 @@ void saveMetadata(const std::string &targetPath, const std::string &backupListPa
 
     std::ofstream metadataFile(targetPath + "/attributes.txt");
     if (!metadataFile.is_open())
-        throw std::runtime_error("Could not open metadata file");
+        throw std::runtime_error("Could not open metadata file (1)");
 
     metadataFile << "v1\n";
     metadataFile << "backups.list\n";
@@ -110,9 +111,18 @@ void recursiveCopy(const std::string &sourcePath, const std::string &destination
     }
 }
 
-void runBackup(const std::string &destinationPath, const std::vector<BackupTarget> &backupList, const std::vector<std::string> &ignoreList, const std::vector<std::string> &ignoreDatesList, bool copyDates, bool quitOnSoftError, bool dryrun) {
+void runBackup(const std::string &destinationPath, const std::vector<BackupTarget> &backupList, const std::vector<std::string> &ignoreList, const std::vector<std::string> &ignoreDatesList, const std::string &backupDirectory, bool copyDates, bool quitOnSoftError, bool dryrun, bool restoring, bool tarball) {
     if (!dryrun && !destinationPath.empty())
         fs::create_directories(destinationPath);
+
+    if (tarball && restoring) {
+        if (!fs::exists(backupDirectory + "/files.tar.xz"))
+            throw std::runtime_error("Tarball (files.tar.xz) does not exist");
+
+        spdlog::info("Extracting tarball from backup");
+        fs::create_directories(backupDirectory + "/files");
+        extractTarball(backupDirectory + "/files.tar.xz", backupDirectory + "/files");
+    }
 
     for (const auto &backupTarget : backupList) {
         std::string currentDestinationPath = destinationPath + "/" + backupTarget.destinationPath;
@@ -124,5 +134,17 @@ void runBackup(const std::string &destinationPath, const std::vector<BackupTarge
         if (!dryrun)
             fs::create_directories(currentDestinationPath);
         recursiveCopy(backupTarget.targetPath, currentDestinationPath, ignoreList, ignoreDatesList, copyDates, quitOnSoftError, dryrun);
+    }
+
+    if (tarball) {
+        if (restoring) {
+            spdlog::info("Removing uncompressed files from backup");
+            fs::remove_all(backupDirectory + "/files");
+        } else {
+            spdlog::info("Creating and compressing tarball");
+            compressTarball(destinationPath, backupDirectory + "/files.tar.xz");
+            spdlog::info("Removing uncompressed files from backup");
+            fs::remove_all(destinationPath);
+        }
     }
 }
