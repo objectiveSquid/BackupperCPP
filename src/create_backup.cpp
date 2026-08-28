@@ -121,7 +121,10 @@ void runBackup(const std::string &destinationPath, const std::vector<BackupTarge
 
         spdlog::info("Extracting tarball from backup");
         fs::create_directories(backupDirectory + "/files");
-        extractTarball(backupDirectory + "/files.tar.xz", backupDirectory + "/files");
+        if (extractTarball(backupDirectory + "/files.tar.xz", backupDirectory + "/files") != 0) {
+            spdlog::critical("Failed to extract tarball, quitting");
+            return;
+        }
     }
 
     for (const auto &backupTarget : backupList) {
@@ -142,7 +145,10 @@ void runBackup(const std::string &destinationPath, const std::vector<BackupTarge
             fs::remove_all(backupDirectory + "/files");
         } else {
             spdlog::info("Creating and compressing tarball");
-            compressTarball(destinationPath, backupDirectory + "/files.tar.xz");
+            if (compressTarball(destinationPath, backupDirectory + "/files.tar.xz") != 0) {
+                spdlog::critical("Failed to create tarball, leaving files uncompressed");
+                return;
+            }
             spdlog::info("Removing uncompressed files from backup");
             fs::remove_all(destinationPath);
         }
