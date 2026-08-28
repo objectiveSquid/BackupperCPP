@@ -88,14 +88,12 @@ int main(int argc, char **argv) {
 
     auto ignoreList = parseIgnoreList(ignoreListPath);
     if (!ignoreList.has_value()) {
-        spdlog::critical("Failed to parse ignore list");
-        return 1;
+        ignoreList = std::vector<std::string>();
     }
 
     auto ignoreDatesList = parseIgnoreList(ignoreDatesListPath);
     if (!ignoreDatesList.has_value()) {
-        spdlog::critical("Failed to parse ignore dates list");
-        return 1;
+        ignoreDatesList = std::vector<std::string>();
     }
 
     // if restoring, we need to handle some stuff

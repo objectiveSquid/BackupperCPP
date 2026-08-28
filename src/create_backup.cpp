@@ -23,8 +23,12 @@ void saveMetadata(const std::string &targetPath, const std::string &backupListPa
     metadataFile.close();
 
     fs::copy_file(backupListPath, targetPath + "/backups.list");
-    fs::copy_file(ignoreListPath, targetPath + "/ignores.list");
-    fs::copy_file(ignoreDatesListPath, targetPath + "/ignore-dates.list");
+
+    // optional
+    if (fs::exists(ignoreListPath))
+        fs::copy_file(ignoreListPath, targetPath + "/ignores.list");
+    if (fs::exists(ignoreDatesListPath))
+        fs::copy_file(ignoreDatesListPath, targetPath + "/ignore-dates.list");
 }
 
 void recursiveCopy(const std::string &sourcePath, const std::string &destinationPath, const std::vector<std::string> &ignoreList, const std::vector<std::string> &ignoreDatesList, bool copyDates, bool quitOnSoftError, bool dryrun) {
