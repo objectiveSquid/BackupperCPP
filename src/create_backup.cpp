@@ -111,17 +111,24 @@ void recursiveCopy(const std::string &sourcePath, const std::string &destination
     }
 }
 
-void runBackup(const std::string &destinationPath, const std::vector<BackupTarget> &backupList, const std::vector<std::string> &ignoreList, const std::vector<std::string> &ignoreDatesList, const std::string &backupDirectory, bool copyDates, bool quitOnSoftError, bool dryrun, bool restoring, bool tarball) {
+void runBackup(const std::string &destinationPath, const std::vector<BackupTarget> &backupList, const std::vector<std::string> &ignoreList, const std::vector<std::string> &ignoreDatesList, const std::string &backupDirectory, bool copyDates, bool quitOnSoftError, bool dryrun, bool restoring, bool tarball, bool tarballXz, bool verbose) {
     if (!dryrun && !destinationPath.empty())
         fs::create_directories(destinationPath);
 
-    if (tarball && restoring) {
-        if (!fs::exists(backupDirectory + "/files.tar.xz"))
-            throw std::runtime_error("Tarball (files.tar.xz) does not exist");
+    // unneeded if not using tarballs, but it's in this scope for convenience
+    std::string tarballPath = backupDirectory + "/files.tar";
+    if (tarballXz)
+        tarballPath += ".xz";
+
+    if ((tarball || tarballXz) && restoring) {
+        if (!fs::exists(tarballPath)) {
+            spdlog::critical("Tarball ({}) does not exist", tarballPath);
+            return;
+        }
 
         spdlog::info("Extracting tarball from backup");
         fs::create_directories(backupDirectory + "/files");
-        if (extractTarball(backupDirectory + "/files.tar.xz", backupDirectory + "/files") != 0) {
+        if (extractTarball(backupDirectory + "/files.tar.xz", backupDirectory + "/files", verbose) != 0) {
             spdlog::critical("Failed to extract tarball, quitting");
             return;
         }
@@ -139,18 +146,24 @@ void runBackup(const std::string &destinationPath, const std::vector<BackupTarge
         recursiveCopy(backupTarget.targetPath, currentDestinationPath, ignoreList, ignoreDatesList, copyDates, quitOnSoftError, dryrun);
     }
 
-    if (tarball) {
+    if (tarball || tarballXz) {
         if (restoring) {
-            spdlog::info("Removing uncompressed files from backup");
+            spdlog::info("Removing unpacked files from backup");
             fs::remove_all(backupDirectory + "/files");
         } else {
-            spdlog::info("Creating and compressing tarball");
-            if (compressTarball(destinationPath, backupDirectory + "/files.tar.xz") != 0) {
-                spdlog::critical("Failed to create tarball, leaving files uncompressed");
+            if (tarballXz)
+                spdlog::info("Creating and compressing tarball");
+            else
+                spdlog::info("Creating tarball");
+
+            if (createTarball(destinationPath, tarballPath, tarballXz, verbose) != 0) {
+                spdlog::critical("Failed to create tarball, leaving files unpacked");
                 return;
             }
-            spdlog::info("Removing uncompressed files from backup");
+            spdlog::info("Removing unpacked files from backup");
             fs::remove_all(destinationPath);
         }
     }
+
+    spdlog::info("{} finished", restoring ? "Restore" : "Backup");
 }

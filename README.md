@@ -38,7 +38,7 @@ You can use the `--ignore-dates-list` parameter to ignore the dates of some file
 ```bash
 ./BackupperCPP /home/user/Backups/backup2025 --backup-list backups.list --ignore-dates-list ignore-dates.list
 ```
-Creating a compressed tarball instead of a directory
+Creating a tarball instead of a directory (use --tarballXz for compressed tarballs)
 ```bash
 ./BackupperCPP /home/user/Backups/backup2025 --backup-list backups.list --tarball
 ```
@@ -47,7 +47,7 @@ To restore a backup, you can simply run the following command:
 ```bash
 ./BackupperCPP --restore /home/user/Backups/backup2025
 ```
-Restoring from a compressed tarball
+Restoring from a tarball (use --tarballXz for compressed tarballs)
 ```bash
 ./BackupperCPP --restore /home/user/Backups/backup2025 --tarball
 ```

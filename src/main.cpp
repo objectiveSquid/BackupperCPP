@@ -31,7 +31,10 @@ int main(int argc, char **argv) {
     logGroup.add_argument("--quiet", "-q").flag().help("Only display warnings and errors");
     logGroup.add_argument("--verbose", "-v").flag().help("Display debug logs");
 
-    program.add_argument("--tarball").flag().help("Create a tarball instead of a directory");
+    auto &tarballGroup = program.add_mutually_exclusive_group();
+    tarballGroup.add_argument("--tarball-xz").flag().help("Create a compressed tarball with xz compression instead of a directory");
+    tarballGroup.add_argument("--tarball").flag().help("Create a tarball instead of a directory");
+
     program.add_argument("--dryrun").flag().help("Don't actually copy anything");
     program.add_argument("--dont-copy-dates").flag().help("Dont copy file dates");
     program.add_argument("--quit-on-soft-error").flag().help("Quit the program on soft errors, such as paths being converted");
@@ -51,6 +54,7 @@ int main(int argc, char **argv) {
     std::string ignoreListPath = program.get<std::string>("--ignore-list");
     std::string ignoreDatesListPath = program.get<std::string>("--ignore-dates-list");
     bool tarball = program.is_used("--tarball");
+    bool tarballXz = program.is_used("--tarball-xz");
     bool dryrun = program.is_used("--dryrun");
     bool restoring = program.is_used("--restore");
     bool quiet = program.is_used("--quiet") || program.is_used("-q");
@@ -128,9 +132,9 @@ int main(int argc, char **argv) {
         saveMetadata(backupDirectoryPath + "/meta", backupListPath, ignoreListPath, ignoreDatesListPath, copyDates);
 
     if (restoring) // when restoring paths are already absolute
-        runBackup("", backupList.value(), ignoreList.value(), ignoreDatesList.value(), backupDirectoryPath, copyDates, quitOnSoftError, dryrun, restoring, tarball);
+        runBackup("", backupList.value(), ignoreList.value(), ignoreDatesList.value(), backupDirectoryPath, copyDates, quitOnSoftError, dryrun, restoring, tarball, tarballXz, verbose);
     else
-        runBackup(backupDirectoryPath + "/files", backupList.value(), ignoreList.value(), ignoreDatesList.value(), backupDirectoryPath, copyDates, quitOnSoftError, dryrun, restoring, tarball);
+        runBackup(backupDirectoryPath + "/files", backupList.value(), ignoreList.value(), ignoreDatesList.value(), backupDirectoryPath, copyDates, quitOnSoftError, dryrun, restoring, tarball, tarballXz, verbose);
 
     // restore system time
     if (copyDates) {
@@ -138,8 +142,6 @@ int main(int argc, char **argv) {
         // we dont care about (permission) errors, because if we get one, the time was never changed to begin with
         setSystemTime(systemTimeBeforeBackup + (cpuTimeAfterBackup - cpuTimeBeforeBackup));
     }
-
-    spdlog::info("{} finished", restoring ? "Restore" : "Backup");
 
     return 0;
 }
